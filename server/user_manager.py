@@ -17,11 +17,22 @@ def createAccount(username, password):
         user = {"username": username, "password": hashed_password}
         db.insertOne(db.USER_ACCOUNT_COLLECTION, user)
         return "join-success"
-    
+
+def loginUser(username, password):
+    user = db.findOne(db.USER_ACCOUNT_COLLECTION, {"username": username})
+    if(user):
+        if(db.findOne(db.CONNECTED_USER_COLLECTION, {"username": username})):
+            return "login-online"
+        elif(user["password"] != password):
+            return "login-wrong-credentials"
+        else:
+            # store username - !!! ip - !!! port - status
+            connected_user = {"username": username, "ip": "!!!", "port": "!!!", "status": "available"}
+            db.insertOne(db.CONNECTED_USER_COLLECTION, connected_user)
+            return "login-success"
+    else: 
+        return "login-account-not-exist"
+
 def logoutUser(username):
     db.deleteOne(db.CONNECTED_USER_COLLECTION, {"username": username})
     return 
-
-
-    
-    
