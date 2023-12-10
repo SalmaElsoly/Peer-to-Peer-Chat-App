@@ -1,7 +1,9 @@
+
 import socket
 import threading
 import time
 from pymongo import MongoClient
+online_users = {}
 
 def handle_hello_message(data, client_address):
     online_users[client_address] = time.time()
@@ -19,13 +21,13 @@ def handle_hello_message(data, client_address):
 
 def check_users():
     while True:
-        # Check the last seen timestamp for each user
+       
         current_time = time.time()
         disconnected_users = []
 
         for client_address, last_seen in online_users.items():
             if current_time - last_seen > 3:
-                # User has not sent a 'HELLO' message for 3 seconds, consider them disconnected
+               
                 disconnected_users.append(client_address)
 
        
@@ -54,5 +56,4 @@ def handle_client(client_socket, addr):
 
 def start_server():
     client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-        client_thread.start()
-
+    client_thread.start()
