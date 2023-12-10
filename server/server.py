@@ -1,59 +1,137 @@
-
 import socket
 import threading
 import time
-from pymongo import MongoClient
-online_users = {}
+import user_manager as UM
 
-def handle_hello_message(data, client_address):
-    online_users[client_address] = time.time()
-    while True:
-        try: 
-            message, address = server_socket.recvfrom(1024).decode()
-            if message == 'HELLO':
-                online_users[client_address] = time.time()
-        except socket.error:
-           
-            print(f"User at {client_address} disconnected.")
-            username = get_username(client_address)
-            logoutUser(username)
-            break
+def handle_hello_message(client_address):
+    try: 
+        tcpThreads[client_address].lastAliveTime = time.time()
 
-def check_users():
-    while True:
-       
-        current_time = time.time()
-        disconnected_users = []
+    except socket.error:
+        print(f"User at {client_address} disconnected.")
+        username = UM.get_username(client_address)
+        UM.logoutUser(username)
+class AliveHandler(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.runFlag=True
+    def stopThread(self):
+        self.runFlag=False
+    def run(self):
+        while self.runFlag:
+            current_time = time.time()
 
-        for client_address, last_seen in online_users.items():
-            if current_time - last_seen > 3:
-               
-                disconnected_users.append(client_address)
+            if current_time - tcpThreads[client_address].lastAliveTime > 3:
+                username = tcpThreads[client_address].username
+                del tcpThreads[client_address]
+                print(f"User at {client_address} disconnected.")
 
-       
-        for user in disconnected_users:
-            del online_users[user]
-            print(f"User at {user} disconnected.")
+            # username = UM.get_username(user)
+            UM.logoutUser(username)
+            time.sleep(2) #Low CPU Utilization
+    
 
-           
-            username = get_username(user)
-            logoutUser(username)
+class ClientThread(threading.Thread) :
+    def __init__(self,ip,port,clientSocket) -> None:
+        self.ip=ip
+        self.port=port
+        self.clientSocket=clientSocket
+        self.AliveHandler=None
+        self.lastAliveTime=None
+        self.username=None
 
-      
-        time.sleep(1)
+    def run(self) -> None:
+        self.lock=threading.Lock()
+        while True:
+            try:
+                data = self.clientSocket.recv(1024).decode().split()
+                if data[0] == "JOIN":
+                    #verify username and create account , username in data[1] and password in data[2]
+                    #if username exists return message "join-exists" otherwise create account and return message "join-success"
+                    result = UM.createAccount(data[1],data[2])
+                    self.clientSocket.send(result.encode())
+                elif data[0]=="LOGIN" :
+                    #Message: LOGIN <username> <password> <portNumberOfTheClient>
+                    result = UM.loginUser(data[1],data[2],self.ip,data[3])
+                    if result in {"login-account-not-exist","login-wrong-credentials","login-online"} :
+                        self.clientSocket.send(result.encode())
+                    elif result == "login-success":
+                        self.username=data[1]
+                        self.lastAliveTime=time.time()
+                        self.AliveHandler = AliveHandler()
+                        self.AliveHandler.start()
+                        self.lock.acquire()
+                        try:
+                            tcpThreads[(self.ip,self.port)] = self
+                        finally:
+                            self.lock.release()
+                        self.clientSocket.send(result.encode())
+                        print("User :"+self.ip+" is logged in successfully")
+                elif data[0]=="LOGOUT":
+                    #Message: LOGOUT <username>
+                    UM.logoutUser(self.username)
+                    self.lock.acquire()
+                    try:
+                        del tcpThreads[(self.ip,self.port)]
+                    finally:
+                        self.lock.release()
+                    print(self.ip + ":" + str(self.port) + " is logged out")
+                    self.clientSocket.close()
+                    self.AliveHandler.stopThread();
+                    break
+                elif data[0]=="LIST-ONLINE-USERS":
+                    #Message: LIST-ONLINE-USERS
+                    self.clientSocket.send(UM.getOnlineUsers(self.username,self.ip,self.port))
+                    print("list-users")
+                elif data[0]=="CREATE-CHAT-ROOM":
+                    #Message: CREATE-CHAT-ROOM <roomName>
+                    print("create room")
+                elif data[0]=="JOIN-CHAT-ROOM":
+                    #Message: JOIN-CHAT-ROOM <roomName>
+                    print("join room")
+                elif data[0]=="LIST-CHAT-ROOMS":
+                    #Message: LIST-CHAT-ROOMS
+                    print("list rooms")
+            except OSError as oErr:
+                print("OSError: {0}".format(oErr)) 
+TCPport = 5050
+UDPport = 1515
+host_ip = socket.gethostbyname(socket.gethostname())
 
-def handle_client(client_socket, addr):
-    ip_address, port = addr
-
-   
-    result = createAccount(username, password, ip_address, port)
-
-  
-    client_socket.send(result.encode())
+print("Server host IP = "+host_ip)
+print("Server port = "+str(TCPport))
 
 
-    client_socket.close()
+tcpThreads = {}
+#socket.AF_INET: Specifies the address family (IPv4).
+#socket.SOCK_STREAM: Specifies the socket type (TCP).
+#socket.SOCK_DGRAM: Datagram-oriented socket (UDP).
+try: 
+    tcpSocket = socket(socket.AF_INET,socket.SOCK_STREAM)
+    udpSocket = socket(socket.AF_INET,socket.SOCK_DGRAM)
+    print ("Socket successfully created")
+except socket.error as err:
+    print (f"socket creation failed with error {err}")
+try:
+    tcpSocket.bind((host_ip,TCPport))
+    udpSocket.bind((host_ip,UDPport))
+except socket.error as e:
+    print(f"Error binding the server socket: {e}")
 
-def start_server():
-    client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-    client_thread.start()
+tcpSocket.listen(5) # max 5 connections in queue
+
+sockets = [tcpSocket,udpSocket]
+
+while sockets :
+    for sock in sockets:
+        if sock is tcpSocket:
+            client_socket, client_address = tcpSocket.accept()
+            # new thread
+            newClientThread=ClientThread(client_address[0],client_address[1],client_socket)
+            newClientThread.start()
+        if sock is udpSocket:
+            #client_address is a tuple containing ip,port
+            data, client_address = udpSocket.recvfrom(1024).decode()  # Buffer size is 1024 bytes
+            # check hello message
+            if data == "HELLO":
+                handle_hello_message(client_address)

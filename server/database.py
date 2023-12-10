@@ -7,7 +7,7 @@ CONNECTION_STRING = "mongodb://localhost:27017"
 USER_ACCOUNT_COLLECTION = "user-account"
 #{"username":"","password":""}
 CONNECTED_USER_COLLECTION="connected-user"
-#{"username":"","ip":"","port":"","status":"busy|available"}
+#{"username":"","ip":"","port":""}
 ROOM_COLLECTION="chat-room"
 
 def get_database():

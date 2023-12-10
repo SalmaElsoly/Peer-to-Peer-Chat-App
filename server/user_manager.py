@@ -26,8 +26,8 @@ def loginUser(username, password, ip, port):
         elif(user["password"] != password):
             return "login-wrong-credentials"
         else:
-            # store username - !!! ip - !!! port - status
-            connected_user = {"username": username, "ip": ip, "port": port, "status": "available"}
+            # store username - !!! ip - !!! port 
+            connected_user = {"username": username, "ip": ip, "port": port}
             db.insertOne(db.CONNECTED_USER_COLLECTION, connected_user)
             return "login-success"
     else: 
@@ -36,3 +36,9 @@ def loginUser(username, password, ip, port):
 def logoutUser(username):
     db.deleteOne(db.CONNECTED_USER_COLLECTION, {"username": username})
     return 
+
+def getOnlineUsers(username,ip,port):
+    online_users = db.findAll(db.CONNECTED_USER_COLLECTION)
+    currentUserIndex=online_users.index({"username": username, "ip": ip, "port": port})
+    online_users.pop(currentUserIndex)
+    return online_users
