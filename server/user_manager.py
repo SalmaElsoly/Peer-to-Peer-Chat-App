@@ -18,7 +18,7 @@ def createAccount(username, password):
         db.insertOne(db.USER_ACCOUNT_COLLECTION, user)
         return "join-success"
 
-def loginUser(username, password):
+def loginUser(username, password, ip, port):
     user = db.findOne(db.USER_ACCOUNT_COLLECTION, {"username": username})
     if(user):
         if(db.findOne(db.CONNECTED_USER_COLLECTION, {"username": username})):
@@ -27,7 +27,7 @@ def loginUser(username, password):
             return "login-wrong-credentials"
         else:
             # store username - !!! ip - !!! port - status
-            connected_user = {"username": username, "ip": "!!!", "port": "!!!", "status": "available"}
+            connected_user = {"username": username, "ip": ip, "port": port, "status": "available"}
             db.insertOne(db.CONNECTED_USER_COLLECTION, connected_user)
             return "login-success"
     else: 
