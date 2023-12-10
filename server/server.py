@@ -1,24 +1,18 @@
-    def handle_hello_message(data, client_address):
-   
+import socket
+import threading
+import time
+from pymongo import MongoClient
+
+def handle_hello_message(data, client_address):
     online_users[client_address] = time.time()
-
-   
     while True:
-        try:
-            
+        try: 
             message, address = server_socket.recvfrom(1024).decode()
-
             if message == 'HELLO':
-              
                 online_users[client_address] = time.time()
-
-               
-
         except socket.error:
            
             print(f"User at {client_address} disconnected.")
-
-           
             username = get_username(client_address)
             logoutUser(username)
             break
@@ -45,3 +39,20 @@ def check_users():
 
       
         time.sleep(1)
+
+def handle_client(client_socket, addr):
+    ip_address, port = addr
+
+   
+    result = createAccount(username, password, ip_address, port)
+
+  
+    client_socket.send(result.encode())
+
+
+    client_socket.close()
+
+def start_server():
+    client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
+        client_thread.start()
+
