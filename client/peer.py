@@ -23,25 +23,26 @@ class Peer:
     elif response == "join-success":
       print("Account Created Successfully :) ")
 
-      def start_hello_thread(self):
-        hello_thread = threading.Thread(target=self.send_hello_message)
-        hello_thread.start()
+  def start_hello_thread(self):
+    hello_thread = threading.Thread(target=self.send_hello_message)
+    hello_thread.start()
 
-    def send_hello_message(self):
-        while True:
-            try:
-                message = "HELLO"
-                self.udpSocket.sendto(message.encode(), (self.serverIP, self.serverPort))
-                time.sleep(1)
-            except socket.error as e:
-                print(f"Error sending 'HELLO' message: {e}")
-                break
-    def logoutUser(self):
-        message = "LOGOUT " + self.username;
-        self.tcpSocket.send(message.encode())
-        self.tcpSocket.close()
-        self.udpSocket.close()
-        print("Logged out successfully :) ")
+  def send_hello_message(self):
+    while True:
+      try:
+        message = "HELLO"
+        self.udpSocket.sendto(message.encode(), (self.serverIP, self.serverPort))
+        time.sleep(1)
+      except socket.error as e:
+        print(f"Error sending 'HELLO' message: {e}")
+        break
+
+  def logoutUser(self):
+    message = "LOGOUT " + self.username;
+    self.tcpSocket.send(message.encode())
+    self.tcpSocket.close()
+    self.udpSocket.close()
+    print("Logged out successfully :) ")
 
 
 
