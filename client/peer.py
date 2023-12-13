@@ -14,6 +14,7 @@ class Peer:
     self.udpSocket.bind(('localhost', 0)) 
     self.start_hello_thread()
     self.peerServerPort=None
+    self.username=None
     option=0
     while option!=8:
       print(''' Choose one of the following options:
@@ -30,9 +31,7 @@ class Peer:
         username = input("Enter username: ")
         password = input("Enter password: ")
         peerServerPort = input("Enter your port number: ")
-        result = self.login(username, password,peerServerPort)
-        if result:
-          self.peerServerPort=peerServerPort
+        self.login(username, password,peerServerPort)
       elif option == 2:
         username = input("Enter username: ")
         password = input("Enter password: ")
@@ -77,8 +76,9 @@ class Peer:
     self.tcpSocket.send(message.encode())
     response = self.tcpSocket.recv(1024).decode()
     if response == "login-success":
+        self.username=username
+        self.peerServerPort=peerServerPort
         print("Logged in successfully...")
-        return True
     elif response == "login-account-not-exist":
         # print("Account does not exist...")
         print("Wrong username or password...")
@@ -86,7 +86,6 @@ class Peer:
         print("Account is already online...")
     elif response == "login-wrong-credentials":
         print("Wrong username or password...")
-    return False
  
     
 
