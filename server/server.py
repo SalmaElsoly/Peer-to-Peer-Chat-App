@@ -107,8 +107,8 @@ tcpThreads = {}
 #socket.SOCK_STREAM: Specifies the socket type (TCP).
 #socket.SOCK_DGRAM: Datagram-oriented socket (UDP).
 try: 
-    tcpSocket = socket(socket.AF_INET,socket.SOCK_STREAM)
-    udpSocket = socket(socket.AF_INET,socket.SOCK_DGRAM)
+    tcpSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    udpSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     print ("Socket successfully created")
 except socket.error as err:
     print (f"socket creation failed with error {err}")
