@@ -1,38 +1,41 @@
+import select
 import socket
 import threading
 import time
 import user_manager as UM
 
-def handle_hello_message(client_address):
+def handle_hello_message(client_username):
     try: 
-        tcpThreads[client_address].lastAliveTime = time.time()
-
+        tcpThreads[client_username].lastAliveTime = time.time()
     except socket.error:
         print(f"User at {client_address} disconnected.")
         username = UM.get_username(client_address)
         UM.logoutUser(username)
 class AliveHandler(threading.Thread):
-    def __init__(self):
+    def __init__(self,clientUsername):
         threading.Thread.__init__(self)
+        self.clientUsername=clientUsername
         self.runFlag=True
     def stopThread(self):
         self.runFlag=False
     def run(self):
         while self.runFlag:
             current_time = time.time()
-
-            if current_time - tcpThreads[client_address].lastAliveTime > 3:
-                username = tcpThreads[client_address].username
-                del tcpThreads[client_address]
-                print(f"User at {client_address} disconnected.")
+            if self.runFlag and current_time - tcpThreads[self.clientUsername].lastAliveTime > 3 :
+                username = tcpThreads[self.clientUsername].username
+                del tcpThreads[self.clientUsername]
+                print(f"User at {self.clientUsername} disconnected by alive timeout.")
 
             # username = UM.get_username(user)
-            UM.logoutUser(username)
+                UM.logoutUser(username)
+                self.runFlag=False
+
             time.sleep(2) #Low CPU Utilization
     
 
 class ClientThread(threading.Thread) :
     def __init__(self,ip,port,clientSocket) -> None:
+        super(ClientThread, self).__init__()
         self.ip=ip
         self.port=port
         self.clientSocket=clientSocket
@@ -57,31 +60,33 @@ class ClientThread(threading.Thread) :
                         self.clientSocket.send(result.encode())
                     elif result == "login-success":
                         self.username=data[1]
-                        self.lastAliveTime=time.time()
-                        self.AliveHandler = AliveHandler()
-                        self.AliveHandler.start()
                         self.lock.acquire()
                         try:
-                            tcpThreads[(self.ip,self.port)] = self
+                            tcpThreads[self.username] = self
                         finally:
                             self.lock.release()
+                        self.lastAliveTime=time.time()
+                        self.AliveHandler = AliveHandler(self.username)
+                        self.AliveHandler.start()
+                        
                         self.clientSocket.send(result.encode())
                         print("User :"+self.ip+" is logged in successfully")
                 elif data[0]=="LOGOUT":
                     #Message: LOGOUT <username>
+                    self.AliveHandler.stopThread();
                     UM.logoutUser(self.username)
                     self.lock.acquire()
                     try:
-                        del tcpThreads[(self.ip,self.port)]
+                        del tcpThreads[self.username]
                     finally:
                         self.lock.release()
                     print(self.ip + ":" + str(self.port) + " is logged out")
                     self.clientSocket.close()
-                    self.AliveHandler.stopThread();
+                    
                     break
                 elif data[0]=="LIST-ONLINE-USERS":
                     #Message: LIST-ONLINE-USERS
-                    self.clientSocket.send(UM.getOnlineUsers(self.username,self.ip,self.port))
+                    self.clientSocket.send(str(UM.getOnlineUsers(self.username)).encode())
                     print("list-users")
                 elif data[0]=="CREATE-CHAT-ROOM":
                     #Message: CREATE-CHAT-ROOM <roomName>
@@ -123,15 +128,17 @@ tcpSocket.listen(5) # max 5 connections in queue
 sockets = [tcpSocket,udpSocket]
 
 while sockets :
-    for sock in sockets:
+    readable, writable, exceptional = select.select(sockets, [], [])
+    for sock in readable:
         if sock is tcpSocket:
             client_socket, client_address = tcpSocket.accept()
             # new thread
+            print("client_address: "+str(client_address))
             newClientThread=ClientThread(client_address[0],client_address[1],client_socket)
             newClientThread.start()
         if sock is udpSocket:
             #client_address is a tuple containing ip,port
-            data, client_address = udpSocket.recvfrom(1024).decode()  # Buffer size is 1024 bytes
+            data, client_address = udpSocket.recvfrom(1024)# Buffer size is 1024 bytes
             # check hello message
-            if data == "HELLO":
-                handle_hello_message(client_address)
+            if data.decode().split()[0] == "HELLO":
+                handle_hello_message(data.decode().split()[1])

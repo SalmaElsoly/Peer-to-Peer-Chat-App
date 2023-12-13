@@ -1,4 +1,4 @@
-import server.database as db
+import database as db
 from pyargon2 import hash
 
 CONST_SALT = "23LUCKY55;-)"
@@ -23,7 +23,7 @@ def loginUser(username, password, ip, port):
     if(user):
         if(db.findOne(db.CONNECTED_USER_COLLECTION, {"username": username})):
             return "login-online"
-        elif(user["password"] != password):
+        elif(user["password"] != hashPassword(username,password)):
             return "login-wrong-credentials"
         else:
             # store username - !!! ip - !!! port 
@@ -37,8 +37,11 @@ def logoutUser(username):
     db.deleteOne(db.CONNECTED_USER_COLLECTION, {"username": username})
     return 
 
-def getOnlineUsers(username,ip,port):
+def getOnlineUsers(username):
     online_users = db.findAll(db.CONNECTED_USER_COLLECTION)
-    currentUserIndex=online_users.index({"username": username, "ip": ip, "port": port})
-    online_users.pop(currentUserIndex)
-    return online_users
+    users = []
+    for user in online_users:
+        if user['username'] == username:
+            continue
+        users.append((user['username'],user['ip'],user['port']))
+    return users

@@ -14,8 +14,8 @@ def get_database():
     client = MongoClient(CONNECTION_STRING)
     return client["p2p-chat-app"]
 
-if __name__ =="__main__":
-    dbname=get_database()
+dbname=get_database()
+# if __name__ =="__main__":
 
 def insertOne(collectionName,item):
     collection=dbname[collectionName]
