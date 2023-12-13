@@ -13,6 +13,30 @@ class Peer:
     self.udpSocket = socket(AF_INET, SOCK_DGRAM)
     self.udpSocket.bind(('localhost', 0)) 
     self.start_hello_thread()
+    option=0
+    while option!=8:
+      print(''' Choose one of the following options:
+            1. Login
+            2. Create Account
+            3. List Online Users
+            4. Start One to One Chat
+            5. List Chat Rooms
+            6. Create Chat Room
+            7. Join Chat Room
+            8. Logout''')
+      option = int(input("Enter your option: "))
+      if option == 1:
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        self.login(username, password)
+      elif option == 2:
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        self.createAccount(username, password)
+      
+
+
+
   
   def createAccount(self, username, password):
     message = "JOIN " + username + " " + password
@@ -37,12 +61,15 @@ class Peer:
         print(f"Error sending 'HELLO' message: {e}")
         break
 
-  def logoutUser(self):
+  def logout(self):
     message = "LOGOUT " + self.username;
     self.tcpSocket.send(message.encode())
     self.tcpSocket.close()
     self.udpSocket.close()
     print("Logged out successfully :) ")
+  
+ 
+    
 
 
 
