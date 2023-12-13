@@ -1,4 +1,6 @@
 from socket import *
+import threading
+import time
 
 class Peer:
 
@@ -34,6 +36,12 @@ class Peer:
             except socket.error as e:
                 print(f"Error sending 'HELLO' message: {e}")
                 break
+    def logoutUser(self):
+        message = "LOGOUT " + self.username;
+        self.tcpSocket.send(message.encode())
+        self.tcpSocket.close()
+        self.udpSocket.close()
+        print("Logged out successfully :) ")
 
 
 
