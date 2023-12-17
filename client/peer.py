@@ -3,8 +3,26 @@ import threading
 import time
 import tabulate
 import msvcrt
+import re
 
-'''colors for the output'''
+
+def validate_password(password):
+    if len(password) < 8:
+        return False
+    if not re.search("[a-z]", password):
+        return False
+    if not re.search("[A-Z]", password):
+        return False
+    if not re.search("[0-9]", password):
+        return False
+    if not re.search('[!@#$%^&*(),.?":{}|<>]', password):
+        return False  # The password must contain at least one special character
+    if re.search("\s", password):
+        return False  # The password must not contain any whitespace characters
+    return True
+
+
+"""colors for the output"""
 RESET = "\033[0m"
 BOLD = "\033[1m"
 RED = "\033[91m"
@@ -15,10 +33,10 @@ MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 
 
-
 """ function to get password from user without showing it on screen """
 
-def get_password(prompt= GREEN+"Enter password: "):
+
+def get_password(prompt=GREEN + "Enter password: "):
     print(prompt, end="", flush=True)
     password = ""
     while True:
@@ -53,7 +71,8 @@ class Peer:
         option = 0
         while option != 8:
             print(
-            MAGENTA+ """ Choose one of the following options:
+                MAGENTA
+                + """ Choose one of the following options:
             1. Login
             2. Create Account
             3. List Online Users
@@ -63,15 +82,21 @@ class Peer:
             7. Join Chat Room
             8. Logout"""
             )
-            option = int(input(GREEN +"Enter your option: "))
+            option = int(input(GREEN + "Enter your option: "))
             if option == 1:
-                username = input(GREEN+ "Enter username: ")
+                username = input(GREEN + "Enter username: ")
                 password = get_password()
-                peerServerPort = input(GREEN+"Enter your port number: ")
+                peerServerPort = input(GREEN + "Enter your port number: ")
                 self.login(username, password, peerServerPort)
             elif option == 2:
-                username = input(GREEN +"Enter username: ")
+                username = input(GREEN + "Enter username: ")
                 password = get_password()
+                while not validate_password(password):
+                    print(
+                        RED
+                        + "Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character"
+                    )
+                    password = get_password()
                 self.createAccount(username, password)
             elif option == 3:
                 self.listOnlineUsers()
@@ -84,18 +109,18 @@ class Peer:
             elif option == 7:
                 self.joinChatRoom()
             elif option >= 9:
-                print(RED+"Invalid option...")
+                print(RED + "Invalid option...")
         if option == 8:
             self.logout()
-        
+
     def createAccount(self, username, password):
         message = "JOIN " + username + " " + password
         self.tcpSocket.send(message.encode())
         response = self.tcpSocket.recv(1024).decode()
         if response == "join-exists":
-            print(RED+"Failed. Account Already Exist :( ")
+            print(RED + "Failed. Account Already Exist :( ")
         elif response == "join-success":
-            print(YELLOW+ "Account Created Successfully :) ")
+            print(YELLOW + "Account Created Successfully :) ")
 
     def start_hello_thread(self):
         hello_thread = threading.Thread(target=self.send_hello_message)
@@ -110,7 +135,7 @@ class Peer:
                 )
                 time.sleep(1)
             except socket.error as e:
-                print(RED+f"Error sending 'HELLO' message: {e}")
+                print(RED + f"Error sending 'HELLO' message: {e}")
                 break
 
     def logout(self):
@@ -119,7 +144,7 @@ class Peer:
         self.helloMessageRunFlag = False
         self.tcpSocket.close()
         self.udpSocket.close()
-        print(YELLOW+"Logged out successfully :) ")
+        print(YELLOW + "Logged out successfully :) ")
 
     def login(self, username, password, peerServerPort):
         message = "LOGIN " + username + " " + password + " " + peerServerPort
@@ -130,13 +155,13 @@ class Peer:
             self.peerServerPort = peerServerPort
             self.helloMessageRunFlag = True
             self.start_hello_thread()
-            print(YELLOW+"Logged in successfully...")
+            print(YELLOW + "Logged in successfully...")
         elif response == "login-account-not-exist":
-            print(RED+"Failed. Account does not exist :(")
+            print(RED + "Failed. Account does not exist :(")
         elif response == "login-online":
-            print(RED+"Account is already online...")
+            print(RED + "Account is already online...")
         elif response == "login-wrong-credentials":
-            print(RED+"Wrong username or password...")
+            print(RED + "Wrong username or password...")
 
     def listOnlineUsers(self):
         message = "LIST-ONLINE-USERS"
