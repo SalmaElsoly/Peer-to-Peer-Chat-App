@@ -69,7 +69,7 @@ class Peer:
         self.username = None
         self.helloMessageRunFlag = None
         option = 0
-        while option != 8:
+        while option != 9:
             print(
                 MAGENTA
                 + """ Choose one of the following options:
@@ -80,7 +80,8 @@ class Peer:
             5. List Chat Rooms
             6. Create Chat Room
             7. Join Chat Room
-            8. Logout"""
+            8. Logout
+            9. Exit"""
             )
             option = int(input(GREEN + "Enter your option: "))
             if option == 1:
@@ -99,19 +100,44 @@ class Peer:
                     password = get_password()
                 self.createAccount(username, password)
             elif option == 3:
-                self.listOnlineUsers()
+                if self.username != None:
+                    self.listOnlineUsers()
+                else:
+                    print(RED+"Please Login/Signup first!")
             elif option == 4:
-                self.startOneToOneChat()
+                if self.username != None:
+                    self.startOneToOneChat()
+                else:
+                    print(RED+"Please Login/Signup first!")
+                
             elif option == 5:
-                self.listChatRooms()
+                if self.username != None:
+                    self.listChatRooms()
+                else:
+                    print(RED+"Please Login/Signup first!")
+                
             elif option == 6:
-                self.createChatRoom()
+                if self.username != None:
+                    self.createChatRoom()
+                else:
+                    print(RED+"Please Login/Signup first!")
+                
             elif option == 7:
-                self.joinChatRoom()
-            elif option >= 9:
+                if self.username != None:
+                    self.joinChatRoom()
+                else:
+                    print(RED+"Please Login/Signup first!")
+                
+            elif option == 8:
+                if self.username != None:
+                    self.logout()
+                else:
+                    print(RED+"Please Login/Signup first!")
+            elif option != 9:
                 print(RED + "Invalid option...")
-        if option == 8:
-            self.logout()
+        if option==9:
+            self.exitApp()
+            
 
     def createAccount(self, username, password):
         message = "JOIN " + username + " " + password
@@ -142,10 +168,20 @@ class Peer:
         message = "LOGOUT " + self.username
         self.tcpSocket.send(message.encode())
         self.helloMessageRunFlag = False
-        self.tcpSocket.close()
-        self.udpSocket.close()
+        self.username=None
+        self.peerServerPort=None
         print(YELLOW + "Logged out successfully :) ")
 
+    def exitApp(self):
+        if self.username != None:
+            self.logout()
+            self.tcpSocket.close()
+            self.udpSocket.close()
+            print(YELLOW + "Exited successfully :) ")
+        else:
+            self.tcpSocket.close()
+            self.udpSocket.close()
+            print(YELLOW + "Exited successfully :) ")
     def login(self, username, password, peerServerPort):
         message = "LOGIN " + username + " " + password + " " + peerServerPort
         self.tcpSocket.send(message.encode())
@@ -186,5 +222,4 @@ class Peer:
         print(tabulate.tabulate(mylist, headers=["username", "ip", "port"]))
 
 
-print(socket.gethostbyname(socket.gethostname()))
 Peer()

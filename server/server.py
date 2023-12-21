@@ -25,12 +25,9 @@ class AliveHandler(threading.Thread):
                 username = tcpThreads[self.clientUsername].username
                 del tcpThreads[self.clientUsername]
                 print(f"User at {self.clientUsername} disconnected by alive timeout.")
-
-            # username = UM.get_username(user)
                 UM.logoutUser(username)
                 self.runFlag=False
-
-            time.sleep(2) #Low CPU Utilization
+            time.sleep(2)
     
 
 class ClientThread(threading.Thread) :

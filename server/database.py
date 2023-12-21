@@ -15,7 +15,6 @@ def get_database():
     return client["p2p-chat-app"]
 
 dbname=get_database()
-# if __name__ =="__main__":
 
 def insertOne(collectionName,item):
     collection=dbname[collectionName]
