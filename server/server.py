@@ -97,6 +97,7 @@ class ClientThread(threading.Thread) :
                     print("join room")
                 elif data[0]=="LIST-CHAT-ROOMS":
                     #Message: LIST-CHAT-ROOMS
+                    self.clientSocket.send(str(CRM.listChatRooms()).encode())
                     print("list rooms")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr)) 

@@ -233,7 +233,28 @@ class Peer:
                 t = t.split(",")
                 mylist.append(t)
         print(tabulate.tabulate(mylist, headers=["username", "ip", "port"]))
-
+    def listChatRooms(self):
+        message = "LIST-CHAT-ROOMS"
+        self.tcpSocket.send(message.encode())
+        response = self.tcpSocket.recv(1024).decode()
+        response = response.strip("[]")
+        response = response.split(")")
+        mylist = []
+        for item in response:
+            if item.startswith("("):
+                t = item[1:]
+                t = t.replace(" ", "")
+                t = t.replace("'", "")
+                t = t.split(",")
+                mylist.append(t)
+            elif item.startswith(", ("):
+                t = item[3:]
+                t = t.replace(" ", "")
+                t = t.replace("'", "")
+                t = t.split(",")
+                mylist.append(t)
+        print(response)
+        print(tabulate.tabulate(mylist, headers=["Room Name","Users"]))
 
 Peer()
 
