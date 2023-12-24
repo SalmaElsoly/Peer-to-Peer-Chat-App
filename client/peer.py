@@ -1,3 +1,4 @@
+import select
 import socket
 import threading
 import time
@@ -66,6 +67,7 @@ class Peer:
         self.udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udpSocket.bind((socket.gethostbyname(socket.gethostname()), 0))
         self.peerServerPort = None
+        self.peerServer = None
         self.username = None
         self.helloMessageRunFlag = None
         option = 0
@@ -118,7 +120,8 @@ class Peer:
                 
             elif option == 6:
                 if self.username != None:
-                    self.createChatRoom()
+                    roomname = input(GREEN + "Enter chatroom name: ")
+                    self.createChatRoom(roomname, self.username, self.peerServer.peerServerIP, self.peerServerPort)
                 else:
                     print(RED+"Please Login/Signup first!")
                 
@@ -198,6 +201,7 @@ class Peer:
         if response == "login-success":
             self.username = username
             self.peerServerPort = peerServerPort
+            self.peerServer = PeerServer(self.username, self.peerServerPort)
             self.helloMessageRunFlag = True
             self.start_hello_thread()
             print(YELLOW + "Logged in successfully...")
@@ -235,12 +239,29 @@ Peer()
 
 class PeerServer(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, username, peerServerPort):
         threading.Thread.__init__(self)
+        self.username = username
+        self.peerServerPort = peerServerPort
+        self.tcpServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         pass
-    
+
     def run(self):
-        pass
+        self.peerServerIP = socket.gethostbyname(socket.gethostname())
+        self.tcpServerSocket.bind(self.peerServerIP, self.peerServerPort)
+        self.tcpServerSocket.listen(5)
+
+        sockets = [self.tcpServerSocket]
+        while sockets:
+            readable, writable, exceptional = select.select(sockets, [], [])
+            for sock in readable:
+                if sock is self.tcpServerSocket:
+                    client_socket, client_address = sock.accept()
+                    client_socket.setblocking(0)
+                    sockets.append(client_socket)
+
+
+
 
 class PeerClient(threading.Thread):
 
