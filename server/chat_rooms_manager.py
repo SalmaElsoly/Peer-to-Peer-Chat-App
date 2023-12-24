@@ -25,3 +25,11 @@ def joinChatRoom(roomname, username, ip, port):
             return "join-chat-room-success"
     else: 
         return "join-chat-room-not-exist"
+
+def leaveChatRoom(roomname, username):
+    result = db.removeUserFromRoom(roomname, username)
+
+    if "acknowledged" in result and result["acknowledged"]:
+        return "Leave-chat-room-success"
+    else:
+        return "leave-chat-room-not successful"
