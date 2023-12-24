@@ -9,7 +9,7 @@ USER_ACCOUNT_COLLECTION = "user-account"
 CONNECTED_USER_COLLECTION="connected-user"
 #{"username":"","ip":"","port":""}
 ROOM_COLLECTION="chat-room"
-#{"roomname":"","username":"","ip":"","port":""}
+#{"roomname":"","users":[{"username":"","ip":"","port":""},{"username":"","ip":"","port":""}]}
 
 
 def get_database():
@@ -32,3 +32,10 @@ def findOne(collectionName,filter):
 def deleteOne(collectionName,filter):
     collection=dbname[collectionName]
     return collection.find_one_and_delete(filter)
+
+def addUserToRoom(chatRoomName,username,ip,port):
+    collection=dbname[ROOM_COLLECTION]
+    return collection.update_one({"name":chatRoomName},{"$push":{"users":{"username":username,"ip":ip,"port":port}}})
+def removeUserFromRoom(chatRoomName,username):
+    collection=dbname[ROOM_COLLECTION]
+    return collection.update_one({"name":chatRoomName},{"$pull":{"users":{"username":username}}})
