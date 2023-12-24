@@ -9,6 +9,8 @@ USER_ACCOUNT_COLLECTION = "user-account"
 CONNECTED_USER_COLLECTION="connected-user"
 #{"username":"","ip":"","port":""}
 ROOM_COLLECTION="chat-room"
+#{"roomname":"","username":"","ip":"","port":""}
+
 
 def get_database():
     client = MongoClient(CONNECTION_STRING)

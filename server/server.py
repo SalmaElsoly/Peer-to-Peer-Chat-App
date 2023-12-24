@@ -3,6 +3,8 @@ import socket
 import threading
 import time
 import user_manager as UM
+import chat_rooms_manager as CRM
+
 
 def handle_hello_message(client_username):
     try: 
@@ -86,7 +88,9 @@ class ClientThread(threading.Thread) :
                     self.clientSocket.send(str(UM.getOnlineUsers(self.username)).encode())
                     print("list-users")
                 elif data[0]=="CREATE-CHAT-ROOM":
-                    #Message: CREATE-CHAT-ROOM <roomName>
+                    #Message: CREATE-CHAT-ROOM <roomName> <userName> <ip> <port>
+                    result = CRM.createChatroom(data[1],data[2],data[3],data[4])
+                    self.clientSocket.send(result.encode())
                     print("create room")
                 elif data[0]=="JOIN-CHAT-ROOM":
                     #Message: JOIN-CHAT-ROOM <roomName>

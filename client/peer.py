@@ -148,6 +148,15 @@ class Peer:
         elif response == "join-success":
             print(YELLOW + "Account Created Successfully :) ")
 
+    def createChatRoom(self, roomname, username, ip, port):
+        message = "CREATE-CHAT-ROOM" + " " + roomname + " " + username + " " + ip + " " + port 
+        self.tcpSocket.send(message.encode())
+        response = self.tcpSocket.recv(1024).decode()
+        if response == "create-chat-room-exists":
+            print(RED + "Failed. Chatroom Already Exist :( ")
+        elif response == "create-chat-room-success":
+            print(YELLOW + "Chatroom Created Successfully :) ")
+
     def start_hello_thread(self):
         hello_thread = threading.Thread(target=self.send_hello_message)
         hello_thread.start()
@@ -223,3 +232,21 @@ class Peer:
 
 
 Peer()
+
+class PeerServer(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        pass
+    
+    def run(self):
+        pass
+
+class PeerClient(threading.Thread):
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        pass
+
+    def run(self):
+        pass
