@@ -269,6 +269,18 @@ class Peer:
             print(RED + "You are already in this chatroom :( ")
             self.joinChatRoomServer(roomname)
 
+
+
+def leaveChatRoom(self, roomname):
+    message = "LEAVE-CHAT-ROOM" + " " + roomname + " " + self.username
+    self.tcpSocket.send(message.encode())
+    response = self.tcpSocket.recv(1024).decode()
+    if response == "Leave-chat-room-success":
+        print(YELLOW + "Left the chatroom successfully :) ")
+    elif response == "leave-chat-room-not successful":
+        print(RED + "couldn't leave chat room :( ")
+
+
 Peer()
 
 class PeerServer(threading.Thread):
