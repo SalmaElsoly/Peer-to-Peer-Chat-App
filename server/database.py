@@ -35,7 +35,7 @@ def deleteOne(collectionName,filter):
 
 def addUserToRoom(chatRoomName,username,ip,port):
     collection=dbname[ROOM_COLLECTION]
-    return collection.update_one({"name":chatRoomName},{"$push":{"users":{"username":username,"ip":ip,"port":port}}})
+    return collection.update_one({"roomname":chatRoomName},{"$push":{"users":{"username":username,"ip":ip,"port":port}}})
 def removeUserFromRoom(chatRoomName,username):
     collection=dbname[ROOM_COLLECTION]
-    return collection.update_one({"name":chatRoomName},{"$pull":{"users":{"username":username}}})
+    return collection.update_one({"roomname":chatRoomName},{"$pull":{"users":{"username":username}}})
