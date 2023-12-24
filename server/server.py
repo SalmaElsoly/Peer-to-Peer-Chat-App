@@ -94,6 +94,7 @@ class ClientThread(threading.Thread) :
                     print("create room")
                 elif data[0]=="JOIN-CHAT-ROOM":
                     #Message: JOIN-CHAT-ROOM <roomName>
+                    self.clientSocket.send(CRM.joinChatRoom(data[1],self.username,self.ip,self.port).encode())
                     print("join room")
                 elif data[0]=="LIST-CHAT-ROOMS":
                     #Message: LIST-CHAT-ROOMS

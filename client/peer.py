@@ -255,6 +255,19 @@ class Peer:
                 mylist.append(t)
         print(response)
         print(tabulate.tabulate(mylist, headers=["Room Name","Users"]))
+    
+    def joinChatRoom(self):
+        roomname = input(GREEN + "Enter chatroom name: ")
+        message = "JOIN-CHAT-ROOM" + " " + roomname + " " + self.username + " " + self.peerServer.peerServerIP + " " + self.peerServerPort 
+        self.tcpSocket.send(message.encode())
+        response = self.tcpSocket.recv(1024).decode()
+        if response == "join-chat-room-exists":
+            print(RED + "Failed. Chatroom does not exist :( ")
+        elif response == "join-chat-room-success":
+            print(YELLOW + "Chatroom Joined Successfully :) ")
+        elif response == "join-chat-room-online":
+            print(RED + "You are already in this chatroom :( ")
+            self.joinChatRoomServer(roomname)
 
 Peer()
 

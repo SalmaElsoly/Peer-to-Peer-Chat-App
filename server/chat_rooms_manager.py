@@ -14,3 +14,14 @@ def listChatRooms():
     for room in chatRooms:
         rooms.append((room['roomname'],len(room['users'])))
     return rooms
+
+def joinChatRoom(roomname, username, ip, port):
+    room = db.findOne(db.ROOM_COLLECTION, {"roomname": roomname})
+    if(room):
+        if(db.findOne(db.ROOM_COLLECTION, {"username": username})):
+            return "join-chat-room-online"
+        else:
+            db.addUserToRoom(roomname, username, ip, port)
+            return "join-chat-room-success"
+    else: 
+        return "join-chat-room-not-exist"
