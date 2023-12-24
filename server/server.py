@@ -100,6 +100,11 @@ class ClientThread(threading.Thread) :
                     #Message: LIST-CHAT-ROOMS
                     self.clientSocket.send(str(CRM.listChatRooms()).encode())
                     print("list rooms")
+                elif data[0] == "LEAVE-CHAT-ROOM":
+                     # Message: LEAVE-CHAT-ROOM <roomName>
+                     result = CRM.leaveChatRoom(data[1], self.username)
+                     self.clientSocket.send(result.encode())
+                     print("leave room")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr)) 
 TCPport = 5050
