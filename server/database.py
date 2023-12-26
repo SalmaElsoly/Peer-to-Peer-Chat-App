@@ -39,3 +39,8 @@ def addUserToRoom(chatRoomName,username,ip,port):
 def removeUserFromRoom(chatRoomName,username):
     collection=dbname[ROOM_COLLECTION]
     return collection.update_one({"roomname":chatRoomName},{"$pull":{"users":{"username":username}}})
+
+def getUsersInRoom(chatRoomName):
+    collection=dbname[ROOM_COLLECTION]
+    return collection.find_one({"roomname":chatRoomName})["users"]
+

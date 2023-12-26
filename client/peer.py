@@ -6,6 +6,9 @@ import tabulate
 import msvcrt
 import re
 
+import peerServer as PS
+import peerClient as PC
+
 
 def validate_password(password):
     if len(password) < 8:
@@ -18,7 +21,7 @@ def validate_password(password):
         return False
     if not re.search('[!@#$%^&*(),.?":{}|<>]', password):
         return False  # The password must contain at least one special character
-    if re.search("\s", password):
+    if re.search(r"\s", password):
         return False  # The password must not contain any whitespace characters
     return True
 
@@ -68,8 +71,10 @@ class Peer:
         self.udpSocket.bind((socket.gethostbyname(socket.gethostname()), 0))
         self.peerServerPort = None
         self.peerServer = None
+        self.peerClient = None
         self.username = None
         self.helloMessageRunFlag = None
+        self.chatRoomusers = []
         option = 0
         while option != 9:
             print(
@@ -82,8 +87,10 @@ class Peer:
             5. List Chat Rooms
             6. Create Chat Room
             7. Join Chat Room
-            8. Logout
-            9. Exit"""
+            8. Send message to chat room
+            9. Leave Chat Room
+            10. Logout
+            11. Exit"""
             )
             option = int(input(GREEN + "Enter your option: "))
             if option == 1:
@@ -105,42 +112,55 @@ class Peer:
                 if self.username != None:
                     self.listOnlineUsers()
                 else:
-                    print(RED+"Please Login/Signup first!")
+                    print(RED + "Please Login/Signup first!")
             elif option == 4:
                 if self.username != None:
                     self.startOneToOneChat()
                 else:
-                    print(RED+"Please Login/Signup first!")
-                
+                    print(RED + "Please Login/Signup first!")
+
             elif option == 5:
                 if self.username != None:
                     self.listChatRooms()
                 else:
-                    print(RED+"Please Login/Signup first!")
-                
+                    print(RED + "Please Login/Signup first!")
+
             elif option == 6:
                 if self.username != None:
                     roomname = input(GREEN + "Enter chatroom name: ")
-                    self.createChatRoom(roomname, self.username, self.peerServer.peerServerIP, self.peerServerPort)
+                    self.createChatRoom(
+                        roomname,
+                        self.username,
+                        self.peerServer.peerServerIP,
+                        self.peerServerPort,
+                    )
                 else:
-                    print(RED+"Please Login/Signup first!")
-                
+                    print(RED + "Please Login/Signup first!")
+
             elif option == 7:
                 if self.username != None:
                     self.joinChatRoom()
                 else:
-                    print(RED+"Please Login/Signup first!")
-                
+                    print(RED + "Please Login/Signup first!")
             elif option == 8:
+                if self.username != None:
+                    self.sendMessageToChatRoom()
+                else:
+                    print(RED + "Please Login/Signup first!")
+            elif option == 9:
+                if self.username != None:
+                    self.leaveChatRoom()
+                else:
+                    print(RED + "Already Logged out!")
+            elif option == 10:
                 if self.username != None:
                     self.logout()
                 else:
-                    print(RED+"Please Login/Signup first!")
-            elif option != 9:
+                    print(RED + "Already Logged out!")
+            elif option != 11:
                 print(RED + "Invalid option...")
-        if option==9:
+        if option == 11:
             self.exitApp()
-            
 
     def createAccount(self, username, password):
         message = "JOIN " + username + " " + password
@@ -152,7 +172,9 @@ class Peer:
             print(YELLOW + "Account Created Successfully :) ")
 
     def createChatRoom(self, roomname, username, ip, port):
-        message = "CREATE-CHAT-ROOM" + " " + roomname + " " + username + " " + ip + " " + port 
+        message = (
+            "CREATE-CHAT-ROOM" + " " + roomname + " " + username + " " + ip + " " + port
+        )
         self.tcpSocket.send(message.encode())
         response = self.tcpSocket.recv(1024).decode()
         if response == "create-chat-room-exists":
@@ -180,8 +202,8 @@ class Peer:
         message = "LOGOUT " + self.username
         self.tcpSocket.send(message.encode())
         self.helloMessageRunFlag = False
-        self.username=None
-        self.peerServerPort=None
+        self.username = None
+        self.peerServerPort = None
         print(YELLOW + "Logged out successfully :) ")
 
     def exitApp(self):
@@ -194,6 +216,7 @@ class Peer:
             self.tcpSocket.close()
             self.udpSocket.close()
             print(YELLOW + "Exited successfully :) ")
+
     def login(self, username, password, peerServerPort):
         message = "LOGIN " + username + " " + password + " " + peerServerPort
         self.tcpSocket.send(message.encode())
@@ -201,7 +224,8 @@ class Peer:
         if response == "login-success":
             self.username = username
             self.peerServerPort = peerServerPort
-            self.peerServer = PeerServer(self.username, self.peerServerPort)
+            self.peerServer = PS.PeerServer(self.username, int(self.peerServerPort))
+            self.peerServer.start()
             self.helloMessageRunFlag = True
             self.start_hello_thread()
             print(YELLOW + "Logged in successfully...")
@@ -233,6 +257,7 @@ class Peer:
                 t = t.split(",")
                 mylist.append(t)
         print(tabulate.tabulate(mylist, headers=["username", "ip", "port"]))
+
     def listChatRooms(self):
         message = "LIST-CHAT-ROOMS"
         self.tcpSocket.send(message.encode())
@@ -254,66 +279,38 @@ class Peer:
                 t = t.split(",")
                 mylist.append(t)
         print(response)
-        print(tabulate.tabulate(mylist, headers=["Room Name","Users"]))
-    
+        print(tabulate.tabulate(mylist, headers=["Room Name", "Users"]))
+
     def joinChatRoom(self):
         roomname = input(GREEN + "Enter chatroom name: ")
-        message = "JOIN-CHAT-ROOM" + " " + roomname + " " + self.username + " " + self.peerServer.peerServerIP + " " + self.peerServerPort 
+        message = (
+            "JOIN-CHAT-ROOM"
+            + " "
+            + roomname
+            + " "
+            + self.username
+            + " "
+            + self.peerServer.peerServerIP
+            + " "
+            + self.peerServerPort
+        )
+        self.tcpSocket.send(message.encode())
+        response = self.tcpSocket.recv(1024).decode().split()
+        if response[0] == "join-chat-room-exists":
+            print(RED + "Failed. Chatroom does not exist :( ")
+        elif response[0] == "join-chat-room-success":
+            print(YELLOW + "Chatroom Joined Successfully :) ")
+        elif response[0] == "join-chat-room-online":
+            print(RED + "You are already in this chatroom :( ")
+            
+    def leaveChatRoom(self, roomname):
+        message = "LEAVE-CHAT-ROOM" + " " + roomname + " " + self.username
         self.tcpSocket.send(message.encode())
         response = self.tcpSocket.recv(1024).decode()
-        if response == "join-chat-room-exists":
-            print(RED + "Failed. Chatroom does not exist :( ")
-        elif response == "join-chat-room-success":
-            print(YELLOW + "Chatroom Joined Successfully :) ")
-        elif response == "join-chat-room-online":
-            print(RED + "You are already in this chatroom :( ")
-            self.joinChatRoomServer(roomname)
-
-
-
-def leaveChatRoom(self, roomname):
-    message = "LEAVE-CHAT-ROOM" + " " + roomname + " " + self.username
-    self.tcpSocket.send(message.encode())
-    response = self.tcpSocket.recv(1024).decode()
-    if response == "Leave-chat-room-success":
-        print(YELLOW + "Left the chatroom successfully :) ")
-    elif response == "leave-chat-room-not successful":
-        print(RED + "couldn't leave chat room :( ")
+        if response == "Leave-chat-room-success":
+            print(YELLOW + "Left the chatroom successfully :) ")
+        elif response == "leave-chat-room-not successful":
+            print(RED + "couldn't leave chat room :( ")
 
 
 Peer()
-
-class PeerServer(threading.Thread):
-
-    def __init__(self, username, peerServerPort):
-        threading.Thread.__init__(self)
-        self.username = username
-        self.peerServerPort = peerServerPort
-        self.tcpServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        pass
-
-    def run(self):
-        self.peerServerIP = socket.gethostbyname(socket.gethostname())
-        self.tcpServerSocket.bind(self.peerServerIP, self.peerServerPort)
-        self.tcpServerSocket.listen(5)
-
-        sockets = [self.tcpServerSocket]
-        while sockets:
-            readable, writable, exceptional = select.select(sockets, [], [])
-            for sock in readable:
-                if sock is self.tcpServerSocket:
-                    client_socket, client_address = sock.accept()
-                    client_socket.setblocking(0)
-                    sockets.append(client_socket)
-
-
-
-
-class PeerClient(threading.Thread):
-
-    def __init__(self):
-        threading.Thread.__init__(self)
-        pass
-
-    def run(self):
-        pass

@@ -136,6 +136,8 @@ tcpSocket.listen(5) # max 5 connections in queue
 sockets = [tcpSocket,udpSocket]
 
 while sockets :
+    if not sockets:
+        continue
     readable, writable, exceptional = select.select(sockets, [], [])
     for sock in readable:
         if sock is tcpSocket:
