@@ -8,7 +8,10 @@ class PeerClient(threading.Thread):
         self.running = True
         self.username = username
         self.chatRoomUsers = chatRoomUsers
+        self.udpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+    def run(self):
+        print("PeerClient thread started")
     def send_message(
         self,
         message,
@@ -17,8 +20,8 @@ class PeerClient(threading.Thread):
         for user in self.chatRoomUsers:
             dest_ip = user["ip"]
             dest_port = user["port"]
-            self.sock.sendto(message.encode(), (dest_ip, dest_port))
+            self.udpSocket.sendto(message.encode(), (dest_ip, dest_port))
 
     def stop(self):
         self.running = False
-        self.sock.close()
+        self.udpSocket.close()

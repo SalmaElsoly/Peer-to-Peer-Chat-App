@@ -26,8 +26,13 @@ def joinChatRoom(roomname, username, ip, port):
             #get all users in the room except the user itself
             users = db.getUsersInRoom(roomname)
             users.remove({"username":username,"ip":ip,"port":port})
+            usersList=[]
+            for user in users:
+                usersList.append((user['username'],user['ip'],user['port']))
+            return usersList
             return "join-chat-room-success" + " " + json.dumps(users)
     else: 
+        return None
         return "join-chat-room-not-exist"
 
 def leaveChatRoom(roomname, username):

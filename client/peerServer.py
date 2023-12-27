@@ -19,13 +19,13 @@ class PeerServer(threading.Thread):
         self.udpServerSocket.bind((self.peerServerIP, self.peerServerPort))
         self.udpServerSocket.setblocking(0)
         sockets = [self.tcpServerSocket]
-        while sockets:
-            readable, writable, exceptional = select.select(sockets, [], [])
-            for sock in readable:
-                if sock is self.tcpServerSocket:
-                    client_socket, client_address = sock.accept()
-                    client_socket.setblocking(0)
-                    sockets.append(client_socket)
+        # while sockets:
+        #     readable, writable, exceptional = select.select(sockets, [], [])
+        #     for sock in readable:
+        #         if sock is self.tcpServerSocket:
+        #             client_socket, client_address = sock.accept()
+        #             client_socket.setblocking(0)
+        #             sockets.append(client_socket)
 
     def recieve_message(self):
         try:

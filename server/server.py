@@ -109,17 +109,16 @@ class ClientThread(threading.Thread):
                     # Message: JOIN-CHAT-ROOM <roomName>
                     response = CRM.joinChatRoom(
                         data[1], self.username, self.ip, self.port
-                    ).encode()
-                    self.clientSocket.send(response)
+                    )
+                    if response:
+                        self.clientSocket.send(("join-chat-room-success" + " " + str(response)).encode())
                     #send to all users in the room that a new user joined except the user itself
-                    response = response.decode().split()
-                    print(response)
-                    if response[0] == "join-chat-room-success":
-                        if len(response) > 2:
-                            response = json.loads(response[2])
+                        # response = response.decode().split()
+                        print(response)
+                        if len(response) > 0:
                             #send to all users in the room that a new user joined except the user itself
                             for user in response:
-                                    tcpThreads[user["username"]].clientSocket.send(
+                                    tcpThreads[user[0]].clientSocket.send(
                                         ("NEW-MEMBER-JOINED " + self.username+ " "+ self.ip+" "+self.port).encode()
                                     )
                     print("join room")
