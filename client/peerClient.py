@@ -18,8 +18,8 @@ class PeerClient(threading.Thread):
     ):
         message = "MESSAGE "+self.username + ": " + message
         for user in self.chatRoomUsers:
-            dest_ip = user["ip"]
-            dest_port = user["port"]
+            dest_ip = user[1]
+            dest_port = int(user[2])
             self.udpSocket.sendto(message.encode(), (dest_ip, dest_port))
 
     def stop(self):

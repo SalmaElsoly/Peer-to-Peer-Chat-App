@@ -30,6 +30,7 @@ class PeerServer(threading.Thread):
     def recieve_message(self):
         try:
             data = self.udpServerSocket.recv(1024).decode().split()
+            print("dataaaaaaaaaa "+str(data))
             return data
         except socket.error:
             return None
