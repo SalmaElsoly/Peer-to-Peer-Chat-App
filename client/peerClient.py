@@ -1,10 +1,24 @@
 import threading
 import socket
 
-class PeerClient(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        pass
 
-    def run(self):
-        pass
+class PeerClient(threading.Thread):
+    def __init__(self,username, chatRoomUsers):
+        threading.Thread.__init__(self)
+        self.running = True
+        self.username = username
+        self.chatRoomUsers = chatRoomUsers
+
+    def send_message(
+        self,
+        message,
+    ):
+        message = "MESSAGE "+self.username + ": " + message
+        for user in self.chatRoomUsers:
+            dest_ip = user["ip"]
+            dest_port = user["port"]
+            self.sock.sendto(message.encode(), (dest_ip, dest_port))
+
+    def stop(self):
+        self.running = False
+        self.sock.close()

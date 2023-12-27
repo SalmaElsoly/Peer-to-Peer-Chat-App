@@ -1,16 +1,16 @@
 import database as db
+import json
 
-def createChatroom(roomname, username, ip, port):
+def createChatroom(roomname):
     if(db.findOne(db.ROOM_COLLECTION, {"roomname": roomname})):
         return "create-chat-room-exists"
     else:
-        room = {"roomname": roomname, "username": username, "ip": ip, "port": port, "users": []}
+        room = {"roomname": roomname, "users": []}
         db.insertOne(db.ROOM_COLLECTION, room)
         return "create-chat-room-success"
  
 def listChatRooms():
     chatRooms = db.findAll(db.ROOM_COLLECTION)
-    print(chatRooms)
     rooms = []
     for room in chatRooms:
         rooms.append((room['roomname'],len(room['users'])))
@@ -23,15 +23,16 @@ def joinChatRoom(roomname, username, ip, port):
             return "join-chat-room-online"
         else:
             db.addUserToRoom(roomname, username, ip, port)
-            print(db.getUsersInRoom(roomname))
-            return "join-chat-room-success"
+            #get all users in the room except the user itself
+            users = db.getUsersInRoom(roomname)
+            users.remove({"username":username,"ip":ip,"port":port})
+            return "join-chat-room-success" + " " + json.dumps(users)
     else: 
         return "join-chat-room-not-exist"
 
 def leaveChatRoom(roomname, username):
     result = db.removeUserFromRoom(roomname, username)
-
-    if "acknowledged" in result and result["acknowledged"]:
+    if result.acknowledged:
         return "Leave-chat-room-success"
     else:
         return "leave-chat-room-not successful"
