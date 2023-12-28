@@ -216,8 +216,6 @@ class Peer:
         if response == "login-success":
             self.username = username
             self.peerServerPort = peerServerPort
-            self.peerServer = PS.PeerServer(self.username, int(self.peerServerPort))
-            self.peerServer.start()
             self.helloMessageRunFlag = True
             self.start_hello_thread()
             print(YELLOW + "Logged in successfully...")
