@@ -41,6 +41,36 @@ MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 PURPLE = "\033[35m"
 
+def format_message(txt):
+    # ~ ~ -> BOLD
+    # - - -> CROSSED
+    # _ _ -> UNDERLINE
+    # / / -> ITALIC
+
+    replace = re.findall('~[^~]*?~',txt)
+    for r in replace:
+        new_val = re.sub("~$", RESET, re.sub('^~',BOLD, r))
+        txt = re.sub(r,new_val, txt)
+
+    # replace with linethrough
+    replace = re.findall('-[^-]*?-',txt)
+    for r in replace:
+        new_val = re.sub("-$", RESET, re.sub('^-', CROSSED ,r))
+        txt = re.sub(r,new_val, txt)
+
+    # replace with underline
+    replace = re.findall('_[^_]*?_',txt)
+    for r in replace:
+        new_val = re.sub("_$", RESET, re.sub('^_', UNDERLINE, r))
+        txt = re.sub(r,new_val, txt)
+
+    # replace with italic
+    replace = re.findall('/[^/]*?/',txt)
+    for r in replace:
+        new_val = re.sub("/$", RESET, re.sub('^/', ITALIC, r))
+        txt = re.sub(r,new_val, txt)
+        print(txt)
+    return txt
 
 
 """ function to get password from user without showing it on screen """
@@ -313,7 +343,7 @@ class Peer:
                             + ": "
                             + RESET
                             + PURPLE
-                            + peerToPeerMessage[1]+RESET
+                            + format_message(peerToPeerMessage[1])+RESET
                         )
 
     def send_messages(self, message):
