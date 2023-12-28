@@ -42,6 +42,7 @@ CYAN = "\033[96m"
 PURPLE = "\033[35m"
 
 
+
 """ function to get password from user without showing it on screen """
 
 
@@ -275,11 +276,14 @@ class Peer:
     def server_notifcation(self):
         while self.chatRoomMessageReceiveFlag:
             peerServerMessage = self.tcpSocket.recv(1024).decode().split()
-            if peerServerMessage == []:
+            if not peerServerMessage:
                 continue
+            if peerServerMessage[0] == "Leave-chat-room-success":
+                print(YELLOW + "Left the chatroom successfully :) ")
+                self.chatRoomUsers = None
             if peerServerMessage[0] == "NEW-MEMBER-JOINED":
                 print(
-                    YELLOW + "New member joined the chatroom: " + peerServerMessage[1]
+                    BLUE + "New member joined the chatroom: " + peerServerMessage[1]
                 )
                 self.chatRoomUsers.append(
                     (
@@ -289,7 +293,7 @@ class Peer:
                     )
                 )
             if peerServerMessage[0] == "LEAVE-CHAT-ROOM":
-                print(YELLOW + "Member left the chatroom: " + peerServerMessage[1])
+                print(BLUE + "Member left the chatroom: " + peerServerMessage[1])
                 for user in self.chatRoomUsers:
                     if user[0] == peerServerMessage[1]:
                         self.chatRoomUsers.remove(user)
@@ -301,8 +305,9 @@ class Peer:
             readable, writable, exceptional = select.select(inputs, [], [], 0.1)
             for sock in readable:
                 if sock is self.udpSocket:
-                    peerToPeerMessage = self.udpSocket.recv(1024).decode().split(maxsplit=1)
-                    print(peerToPeerMessage)
+                    peerToPeerMessage = (
+                        self.udpSocket.recv(1024).decode().split(maxsplit=1)
+                    )
                     if peerToPeerMessage is not None:
                         print(
                             CYAN
@@ -310,42 +315,27 @@ class Peer:
                             + ": "
                             + RESET
                             + PURPLE
-                            + peerToPeerMessage[1]
+                            + peerToPeerMessage[1]+RESET
                         )
 
     def send_messages(self, message):
-        for user in self.chatRoomUsers:
-            dest_ip = user[1]
-            dest_port = user[2]
-            print(
-                "Sending message to "
-                + user[0]
-                + " at "
-                + dest_ip
-                + ":"
-                + str(dest_port)
-            )
-            self.udpSocket.sendto(
-                str(self.username + " " + message).encode(), (dest_ip, int(dest_port))
-            )
+        if self.chatRoomUsers is not None:
+            for user in self.chatRoomUsers:
+                dest_ip = user[1]
+                dest_port = user[2]
+                self.udpSocket.sendto(
+                    str(self.username + " " + message).encode(), (dest_ip, int(dest_port))
+                )
 
     def joinChatRoom(self, roomname):
-        message = (
-            "JOIN-CHAT-ROOM"
-            + " "
-            + roomname
-            + " "
-            + self.username
-        )
+        message = "JOIN-CHAT-ROOM" + " " + roomname + " " + self.username
         self.tcpSocket.send(message.encode())
         response = self.tcpSocket.recv(1024).decode().split(maxsplit=1)
-        print("respponse" + str(response))
         if response[0] == "join-chat-room-not-exist":
             print(RED + "Failed. Chatroom does not exist :( ")
         elif response[0] == "join-chat-room-success":
             print(YELLOW + "Chatroom Joined Successfully :) ")
-            # chatRoomusers = json.loads(response[1])
-            chatRoomUsers = []
+            self.chatRoomUsers = []
             if len(response) > 1:
                 s = response[1]
                 if s != "[]":
@@ -357,16 +347,13 @@ class Peer:
                             t = t.replace(" ", "")
                             t = t.replace("'", "")
                             t = t.split(",")
-                            chatRoomUsers.append(t)
+                            self.chatRoomUsers.append(t)
                         elif item.startswith(",("):
                             t = item[2:]
                             t = t.replace(" ", "")
                             t = t.replace("'", "")
                             t = t.split(",")
-                            chatRoomUsers.append(t)
-                print(chatRoomUsers)
-                # Move this line inside the loop
-            self.chatRoomUsers = chatRoomUsers
+                            self.chatRoomUsers.append(t)
             self.chatRoomMessageReceiveFlag = True
             receive_thread = threading.Thread(target=self.receive_messages)
             server_notification_thread = threading.Thread(
@@ -376,7 +363,7 @@ class Peer:
             receive_thread.start()
             server_notification_thread.start()
 
-            message = input()
+            message = input(RESET)
             while not message:
                 message = input()
             while message != ":q":
@@ -386,20 +373,14 @@ class Peer:
                     message = input()
             self.chatRoomMessageReceiveFlag = False
             receive_thread.join()
-            server_notification_thread.join()
             self.leaveChatRoom(roomname)
+            server_notification_thread.join()
 
     def leaveChatRoom(self, roomname):
         message = "LEAVE-CHAT-ROOM" + " " + roomname + " " + self.username
         self.tcpSocket.send(message.encode())
-        print("before response")
-        response = self.tcpSocket.recv(1024).decode()
-        print("resp" + response)
-        if response == "Leave-chat-room-success":
-            print(YELLOW + "Left the chatroom successfully :) ")
-            self.chatRoomUsers = None
-        elif response == "leave-chat-room-not successful":
-            print(RED + "couldn't leave chat room :( ")
+       
+        
 
 
 Peer()
