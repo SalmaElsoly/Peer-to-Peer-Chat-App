@@ -44,9 +44,20 @@ def joinChatRoom(roomname, username, tcpThreads):
         return None
 
 
-def leaveChatRoom(roomname, username):
+def leaveChatRoom(roomname, username, tcpThreads):
     result = db.removeUserFromRoom(roomname, username)
     if result.acknowledged:
-        return "Leave-chat-room-success"
+         users = db.getUsersInRoom(roomname)
+         usersList = []
+         for user in users:
+            usersList.append(
+                (
+                    user["username"],
+                    tcpThreads[user["username"]].udpAddress[0],
+                    str(tcpThreads[user["username"]].udpAddress[1]),
+                )
+            )
+            return usersList
+       
     else:
-        return "leave-chat-room-not successful"
+        return None

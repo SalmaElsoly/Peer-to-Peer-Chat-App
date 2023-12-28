@@ -108,9 +108,7 @@ class ClientThread(threading.Thread):
                     print("create room")
                 elif data[0] == "JOIN-CHAT-ROOM":
                     # Message: JOIN-CHAT-ROOM <roomName>
-                    response = CRM.joinChatRoom(
-                        data[1], self.username, tcpThreads
-                    )
+                    response = CRM.joinChatRoom(data[1], self.username, tcpThreads)
                     print(response)
                     if response != None:
                         if len(response) == 0:
@@ -146,8 +144,22 @@ class ClientThread(threading.Thread):
                     print("list rooms")
                 elif data[0] == "LEAVE-CHAT-ROOM":
                     # Message: LEAVE-CHAT-ROOM <roomName>
-                    result = CRM.leaveChatRoom(data[1], self.username)
-                    self.clientSocket.send(result.encode())
+                    response = CRM.leaveChatRoom(data[1], self.username,tcpThreads)
+                    if response != None:
+                        if len(response) == 0:
+                            self.clientSocket.send(
+                                ("Leave-chat-room-success").encode()
+                            )
+                        else:
+                            self.clientSocket.send(("Leave-chat-room-success").encode())
+
+                        if len(response) > 0:
+                            for user in response:
+                                tcpThreads[user[0]].clientSocket.send(
+                                    ("MEMBER-LEFT " + self.username).encode()
+                                )
+                    else:
+                        self.clientSocket.send(("Leave-chat-room-unsuccesfull").encode())
                     print("leave room")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr))

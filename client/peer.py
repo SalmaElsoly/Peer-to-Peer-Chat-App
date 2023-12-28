@@ -270,7 +270,6 @@ class Peer:
                 t = t.replace("'", "")
                 t = t.split(",")
                 mylist.append(t)
-        print(response)
         print(tabulate.tabulate(mylist, headers=["Room Name", "Users"]))
 
     def server_notifcation(self):
@@ -281,9 +280,10 @@ class Peer:
             if peerServerMessage[0] == "Leave-chat-room-success":
                 print(YELLOW + "Left the chatroom successfully :) ")
                 self.chatRoomUsers = None
+                break
             if peerServerMessage[0] == "NEW-MEMBER-JOINED":
                 print(
-                    BLUE + "New member joined the chatroom: " + peerServerMessage[1]
+                    BLUE + peerServerMessage[1] + " joined the chatroom "+RESET
                 )
                 self.chatRoomUsers.append(
                     (
@@ -292,8 +292,8 @@ class Peer:
                         int(peerServerMessage[3]),
                     )
                 )
-            if peerServerMessage[0] == "LEAVE-CHAT-ROOM":
-                print(BLUE + "Member left the chatroom: " + peerServerMessage[1])
+            if peerServerMessage[0] == "MEMBER-LEFT":
+                print(BLUE + peerServerMessage[1] + " left the chatroom "+RESET)
                 for user in self.chatRoomUsers:
                     if user[0] == peerServerMessage[1]:
                         self.chatRoomUsers.remove(user)
