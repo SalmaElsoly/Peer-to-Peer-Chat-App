@@ -47,9 +47,9 @@ def joinChatRoom(roomname, username, tcpThreads):
 def leaveChatRoom(roomname, username, tcpThreads):
     result = db.removeUserFromRoom(roomname, username)
     if result.acknowledged:
-         users = db.getUsersInRoom(roomname)
-         usersList = []
-         for user in users:
+        users = db.getUsersInRoom(roomname)
+        usersList = []
+        for user in users:
             usersList.append(
                 (
                     user["username"],
@@ -57,7 +57,7 @@ def leaveChatRoom(roomname, username, tcpThreads):
                     str(tcpThreads[user["username"]].udpAddress[1]),
                 )
             )
-            return usersList
+        return usersList
        
     else:
         return None

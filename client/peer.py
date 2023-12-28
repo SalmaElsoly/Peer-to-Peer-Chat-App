@@ -346,8 +346,8 @@ class Peer:
                             t = t.replace("'", "")
                             t = t.split(",")
                             self.chatRoomUsers.append(t)
-                        elif item.startswith(",("):
-                            t = item[2:]
+                        elif item.startswith(", ("):
+                            t = item[3:]
                             t = t.replace(" ", "")
                             t = t.replace("'", "")
                             t = t.split(",")
