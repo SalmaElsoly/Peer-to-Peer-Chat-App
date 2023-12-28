@@ -30,12 +30,16 @@ def validate_password(password):
 """colors for the output"""
 RESET = "\033[0m"
 BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+CROSSED = "\033[9m"
+ITALIC = "\033[3m"
 RED = "\033[91m"
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
 BLUE = "\033[94m"
 MAGENTA = "\033[95m"
 CYAN = "\033[96m"
+PURPLE = "\033[35m"
 
 
 """ function to get password from user without showing it on screen """
@@ -75,7 +79,8 @@ class Peer:
         self.peerClient = None
         self.username = None
         self.helloMessageRunFlag = None
-        self.chatRoomMessageReceiveFlag=False
+        self.chatRoomMessageReceiveFlag = False
+        self.chatRoomUsers = None
         option = 0
         while option != 9:
             print(
@@ -267,34 +272,62 @@ class Peer:
         print(response)
         print(tabulate.tabulate(mylist, headers=["Room Name", "Users"]))
 
-    def receive_messages(self):
+    def server_notifcation(self):
         while self.chatRoomMessageReceiveFlag:
-            peerToPeerMessage = self.peerServer.recieve_message()
-            if peerToPeerMessage is not None:
-                if peerToPeerMessage[0] == "MESSAGE":
-                    print(
-                        BOLD
-                        + peerToPeerMessage[1]
-                        + ": "
-                        + peerToPeerMessage[2]
-                        + RESET
-                    )
             peerServerMessage = self.tcpSocket.recv(1024).decode().split()
+            if peerServerMessage == []:
+                continue
             if peerServerMessage[0] == "NEW-MEMBER-JOINED":
                 print(
                     YELLOW + "New member joined the chatroom: " + peerServerMessage[1]
                 )
-                self.peerClient.chatRoomUsers.append((peerServerMessage[1],peerServerMessage[2],int(peerServerMessage[3])))
+                self.chatRoomUsers.append(
+                    (
+                        peerServerMessage[1],
+                        peerServerMessage[2],
+                        int(peerServerMessage[3]),
+                    )
+                )
             if peerServerMessage[0] == "LEAVE-CHAT-ROOM":
                 print(YELLOW + "Member left the chatroom: " + peerServerMessage[1])
-                del self.peerClient.chatRoomUsers[peerServerMessage[1]]
+                for user in self.chatRoomUsers:
+                    if user[0] == peerServerMessage[1]:
+                        self.chatRoomUsers.remove(user)
+                        break
 
-    def send_messages(self, roomname):
-        while True:
-            message=input()
-            if message == "exit":
-                self.leaveChatRoom(roomname)
-            self.peerClient.send_message(message)
+    def receive_messages(self):
+        inputs = [self.udpSocket]
+        while inputs and self.chatRoomMessageReceiveFlag:
+            readable, writable, exceptional = select.select(inputs, [], [], 0.1)
+            for sock in readable:
+                if sock is self.udpSocket:
+                    peerToPeerMessage = self.udpSocket.recv(1024).decode().split(maxsplit=1)
+                    print(peerToPeerMessage)
+                    if peerToPeerMessage is not None:
+                        print(
+                            CYAN
+                            + peerToPeerMessage[0]
+                            + ": "
+                            + RESET
+                            + PURPLE
+                            + peerToPeerMessage[1]
+                        )
+
+    def send_messages(self, message):
+        for user in self.chatRoomUsers:
+            dest_ip = user[1]
+            dest_port = user[2]
+            print(
+                "Sending message to "
+                + user[0]
+                + " at "
+                + dest_ip
+                + ":"
+                + str(dest_port)
+            )
+            self.udpSocket.sendto(
+                str(self.username + " " + message).encode(), (dest_ip, int(dest_port))
+            )
 
     def joinChatRoom(self, roomname):
         message = (
@@ -303,78 +336,68 @@ class Peer:
             + roomname
             + " "
             + self.username
-            + " "
-            + self.peerServer.peerServerIP
-            + " "
-            + self.peerServerPort
         )
         self.tcpSocket.send(message.encode())
-        print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
         response = self.tcpSocket.recv(1024).decode().split(maxsplit=1)
-        print("respponse"+str(response))
+        print("respponse" + str(response))
         if response[0] == "join-chat-room-not-exist":
             print(RED + "Failed. Chatroom does not exist :( ")
         elif response[0] == "join-chat-room-success":
             print(YELLOW + "Chatroom Joined Successfully :) ")
-            #chatRoomusers = json.loads(response[1])
-            chatRoomUsers=[]
-            if len(response) >1:
-                s= response[1]
-                if s!="[]":
-                    s= s.strip("[]")
-                    s=s.split(')')
+            # chatRoomusers = json.loads(response[1])
+            chatRoomUsers = []
+            if len(response) > 1:
+                s = response[1]
+                if s != "[]":
+                    s = s.strip("[]")
+                    s = s.split(")")
                     for item in s:
                         if item.startswith("("):
-                            t=item[1:]
-                            t=t.replace(" ","")
-                            t=t.replace("'","")
-                            t=t.split(",")
+                            t = item[1:]
+                            t = t.replace(" ", "")
+                            t = t.replace("'", "")
+                            t = t.split(",")
                             chatRoomUsers.append(t)
                         elif item.startswith(",("):
-                            t=item[2:]
-                            t=t.replace(" ","")
-                            t=t.replace("'","")
-                            t=t.split(",")
+                            t = item[2:]
+                            t = t.replace(" ", "")
+                            t = t.replace("'", "")
+                            t = t.split(",")
                             chatRoomUsers.append(t)
                 print(chatRoomUsers)
                 # Move this line inside the loop
-            self.peerClient = PC.PeerClient(
-                self.username, chatRoomUsers
-            )
-            self.peerClient.start()
-            self.chatRoomMessageReceiveFlag=True
+            self.chatRoomUsers = chatRoomUsers
+            self.chatRoomMessageReceiveFlag = True
             receive_thread = threading.Thread(target=self.receive_messages)
-            # send_thread = threading.Thread(
-            #     target=self.send_messages, args=(roomname,)
-            # )
+            server_notification_thread = threading.Thread(
+                target=self.server_notifcation
+            )
+
             receive_thread.start()
-            # send_thread.start()
+            server_notification_thread.start()
 
-            try:
-
-                while True:
-                    message=input()
-                    if message == "exit":
-                        self.chatRoomMessageReceiveFlag=False
-                        receive_thread.join()
-                        self.peerClient.chatRoomUsers={}
-                        self.peerClient.stop()
-                        self.leaveChatRoom(roomname)
-                        break
-                    self.peerClient.send_message(message)
-            except Exception as e:
-                print(f"An error occurred: {e}")
+            message = input()
+            while not message:
+                message = input()
+            while message != ":q":
+                self.send_messages(message)
+                message = input()
+                while not message:
+                    message = input()
+            self.chatRoomMessageReceiveFlag = False
+            receive_thread.join()
+            server_notification_thread.join()
+            self.leaveChatRoom(roomname)
 
     def leaveChatRoom(self, roomname):
         message = "LEAVE-CHAT-ROOM" + " " + roomname + " " + self.username
         self.tcpSocket.send(message.encode())
         print("before response")
         response = self.tcpSocket.recv(1024).decode()
-        print("resp"+response)
+        print("resp" + response)
         if response == "Leave-chat-room-success":
             print(YELLOW + "Left the chatroom successfully :) ")
-            # self.peerClient.chatRoomUsers = {}
-            # self.peerClient.stop()
+            self.chatRoomUsers = None
         elif response == "leave-chat-room-not successful":
             print(RED + "couldn't leave chat room :( ")
 

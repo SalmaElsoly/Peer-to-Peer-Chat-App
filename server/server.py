@@ -7,9 +7,10 @@ import user_manager as UM
 import chat_rooms_manager as CRM
 
 
-def handle_hello_message(client_username):
+def handle_hello_message(client_username, client_address):
     try:
         tcpThreads[client_username].lastAliveTime = time.time()
+        tcpThreads[client_username].udpAddress = client_address
     except socket.error:
         print(f"User at {client_address} disconnected.")
         username = UM.get_username(client_address)
@@ -108,23 +109,34 @@ class ClientThread(threading.Thread):
                 elif data[0] == "JOIN-CHAT-ROOM":
                     # Message: JOIN-CHAT-ROOM <roomName>
                     response = CRM.joinChatRoom(
-                        data[1], self.username, self.ip, self.port
+                        data[1], self.username, tcpThreads
                     )
                     print(response)
                     if response != None:
-                        if len(response)==0:
+                        if len(response) == 0:
                             self.clientSocket.send(("join-chat-room-success").encode())
                         else:
-                            self.clientSocket.send(("join-chat-room-success" + " " + str(response)).encode())
-                        #send to all users in the room that a new user joined except the user itself
+                            self.clientSocket.send(
+                                (
+                                    "join-chat-room-success" + " " + str(response)
+                                ).encode()
+                            )
+                        # send to all users in the room that a new user joined except the user itself
                         # response = response.decode().split()
                         print(response)
                         if len(response) > 0:
-                            #send to all users in the room that a new user joined except the user itself
+                            # send to all users in the room that a new user joined except the user itself
                             for user in response:
-                                    tcpThreads[user[0]].clientSocket.send(
-                                        ("NEW-MEMBER-JOINED " + self.username+ " "+ self.ip+" "+str(self.port)).encode()
-                                    )
+                                tcpThreads[user[0]].clientSocket.send(
+                                    (
+                                        "NEW-MEMBER-JOINED "
+                                        + self.username
+                                        + " "
+                                        + self.udpAddress[0]
+                                        + " "
+                                        + str(self.udpAddress[1])
+                                    ).encode()
+                                )
                     else:
                         self.clientSocket.send(("join-chat-room-not-exist").encode())
                     print("join room")
@@ -139,6 +151,9 @@ class ClientThread(threading.Thread):
                     print("leave room")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr))
+            except Exception as e:
+                print("Exception: {0}".format(e))
+                break
 
 
 TCPport = 5050
@@ -187,4 +202,4 @@ while sockets:
             data, client_address = udpSocket.recvfrom(1024)  # Buffer size is 1024 bytes
             # check hello message
             if data.decode().split()[0] == "HELLO":
-                handle_hello_message(data.decode().split()[1])
+                handle_hello_message(data.decode().split()[1], client_address)
