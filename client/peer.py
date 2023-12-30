@@ -49,25 +49,25 @@ def format_message(txt):
 
     replace = re.findall('~[^~]*?~',txt)
     for r in replace:
-        new_val = re.sub("~$", RESET, re.sub('^~',BOLD, r))
+        new_val = re.sub("~$", RESET+PURPLE, re.sub('^~',BOLD, r))
         txt = re.sub(r,new_val, txt)
 
     # replace with linethrough
     replace = re.findall('-[^-]*?-',txt)
     for r in replace:
-        new_val = re.sub("-$", RESET, re.sub('^-', CROSSED ,r))
+        new_val = re.sub("-$", RESET+PURPLE, re.sub('^-', CROSSED ,r))
         txt = re.sub(r,new_val, txt)
 
     # replace with underline
     replace = re.findall('_[^_]*?_',txt)
     for r in replace:
-        new_val = re.sub("_$", RESET, re.sub('^_', UNDERLINE, r))
+        new_val = re.sub("_$", RESET+PURPLE, re.sub('^_', UNDERLINE, r))
         txt = re.sub(r,new_val, txt)
 
     # replace with italic
     replace = re.findall('/[^/]*?/',txt)
     for r in replace:
-        new_val = re.sub("/$", RESET, re.sub('^/', ITALIC, r))
+        new_val = re.sub("/$", RESET+PURPLE, re.sub('^/', ITALIC, r))
         txt = re.sub(r,new_val, txt)
         print(txt)
     return txt
