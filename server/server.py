@@ -161,6 +161,14 @@ class ClientThread(threading.Thread):
                     else:
                         self.clientSocket.send(("Leave-chat-room-unsuccesfull").encode())
                     print("leave room")
+                elif data[0]=="SEARCH-USER":
+                    # Message: SEARCH-USER <username>
+                    response=UM.searchUser(data[1])
+                    if response=="user-not-online":
+                        self.clientSocket.send(("user-not-online").encode())
+                    else:
+                        self.clientSocket.send((response["ip"]+" "+str(response["port"])).encode())
+                    print("search user")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr))
             except Exception as e:

@@ -45,3 +45,10 @@ def getOnlineUsers(username):
             continue
         users.append((user['username'],user['ip'],user['port']))
     return users
+
+def searchUser(username):
+    user = db.findOne(db.CONNECTED_USER_COLLECTION, {"username": username})
+    if(user):
+        return user
+    else:
+        return "user-not-online"
