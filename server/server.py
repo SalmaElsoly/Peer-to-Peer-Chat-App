@@ -56,7 +56,9 @@ class ClientThread(threading.Thread):
         while True:
             try:
                 data = self.clientSocket.recv(1024).decode().split()
-                if data[0] == "JOIN":
+                if len(data) == 0:
+                    pass
+                elif data[0] == "JOIN":
                     # verify username and create account , username in data[1] and password in data[2]
                     # if username exists return message "join-exists" otherwise create account and return message "join-success"
                     result = UM.createAccount(data[1], data[2])
@@ -161,6 +163,14 @@ class ClientThread(threading.Thread):
                     else:
                         self.clientSocket.send(("Leave-chat-room-unsuccesfull").encode())
                     print("leave room")
+                elif data[0]=="SEARCH-USER":
+                    # Message: SEARCH-USER <username>
+                    response=UM.searchUser(data[1])
+                    if response=="user-not-online":
+                        self.clientSocket.send(("user-not-online").encode())
+                    else:
+                        self.clientSocket.send((response["ip"]+" "+str(response["port"])).encode())
+                    print("search user")
             except OSError as oErr:
                 print("OSError: {0}".format(oErr))
             except Exception as e:
