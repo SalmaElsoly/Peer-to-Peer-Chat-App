@@ -3,9 +3,10 @@ import subprocess
 import psutil
 import time
 import threading
+import socket
 
 index = -1
-
+hostIp = socket.gethostbyname(socket.gethostname())
 
 def run_peer(i):
     try:
@@ -19,7 +20,7 @@ def run_peer(i):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        inputs = ["192.168.56.1\n", "9\n"]
+        inputs = [str(hostIp)+"\n", "9\n"]
         for input in inputs:
             process.stdin.write(input.encode())
             process.stdin.flush()
@@ -46,7 +47,7 @@ def run_chunk(start, end):
 
 def stress_test():
     max_processes = 60
-    num_of_peers = 500
+    num_of_peers = 100
     num_chunks = num_of_peers // max_processes
     processes = []
     runtimes = []
@@ -88,12 +89,12 @@ def server_thread():
             text=True,
             bufsize=1,
         )
-
+        output_file.flush()
         print("Server thread started")
         time.sleep(30)
         server.kill()
         server.wait()
-        output_file.flush()
+        
 
 
 def main():

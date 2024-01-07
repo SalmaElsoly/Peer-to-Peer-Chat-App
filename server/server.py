@@ -56,7 +56,9 @@ class ClientThread(threading.Thread):
         while True:
             try:
                 data = self.clientSocket.recv(1024).decode().split()
-                if data[0] == "JOIN":
+                if len(data) == 0:
+                    pass
+                elif data[0] == "JOIN":
                     # verify username and create account , username in data[1] and password in data[2]
                     # if username exists return message "join-exists" otherwise create account and return message "join-success"
                     result = UM.createAccount(data[1], data[2])
