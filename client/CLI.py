@@ -60,7 +60,6 @@ def format_message(txt):
     for r in replace:
         new_val = re.sub("/$", RESET + PURPLE, re.sub("^/", ITALIC, r))
         txt = re.sub(r, new_val, txt)
-        print(txt)
     return txt
 
 
