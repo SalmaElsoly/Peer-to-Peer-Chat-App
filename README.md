@@ -29,6 +29,7 @@ Before you begin, ensure you have the following prerequisites:
 
   ```
   pip install netifaces psutil pyargon2 pymongo pytest tabulate
+  ```
 
 ### Installation
  first clone the code:
